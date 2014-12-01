@@ -1,6 +1,7 @@
 package com.example.mc_mouseapp;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.Arrays;
 import java.util.Set;
 import java.util.UUID;
 
@@ -30,9 +31,11 @@ public class MainActivity extends ActionBarActivity implements SensorEventListen
 	private Sensor gyroscope;
 	TextView xValueText,yValueText,zValueText;
 	Boolean BLUETOOTH_ENABLED = false;
+	Boolean IsConnectionEstabilished = false;
 	BluetoothAdapter adapter; // The default adapter.
 	TextView view = null; // For errors.
 	final int REQUEST_ENABLE_BT_SUCCESS = 1; // Successful Bluetooth enable.
+	OutputStream outputStream;
 	private final UUID mouseDroidUUID = UUID.fromString("3DD7E793-C461-4FAE-B715-12E8940A0975");
 	float[] values = new float[3];
     @Override
@@ -44,6 +47,12 @@ public class MainActivity extends ActionBarActivity implements SensorEventListen
         sensorManager.registerListener(this, gyroscope ,SensorManager.SENSOR_DELAY_FASTEST);
         //adapter = BluetoothAdapter.getDefaultAdapter();
         view = (TextView)findViewById(R.id.textForErrors);
+        if(!BLUETOOTH_ENABLED)
+      		{	
+              	System.out.println("BLUETOOTH");
+      			BLUETOOTH_ENABLED = true;
+      			new Bluetooth().executeOnExecutor(Bluetooth.THREAD_POOL_EXECUTOR);
+      		}
 //        if (!adapter.isEnabled()) {
 //			view.setText("Bluetooth is not enabled. Enabling ...");
 //			Intent enableBluetooth = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
@@ -129,7 +138,7 @@ public class MainActivity extends ActionBarActivity implements SensorEventListen
 			}
 	    protected void onPostExecute(float[] result) {        
 			MainActivity.this.setGyroResult(result);
-			
+			new SendBluetoothData().executeOnExecutor(GyroData.THREAD_POOL_EXECUTOR, values);	
 	    }
 	};
 	
@@ -143,19 +152,19 @@ public class MainActivity extends ActionBarActivity implements SensorEventListen
 	    }
 	   @SuppressLint("NewApi") @Override
 		protected Void doInBackground(Void... params) {
-		   System.out.println("BLUETOOTH PLS");
+		   //System.out.println("BLUETOOTH PLS");
 			adapter = BluetoothAdapter.getDefaultAdapter();
 	    	Set<BluetoothDevice> pairedDevices = adapter.getBondedDevices();
 			while (pairedDevices.size() == 0) {
 				pairedDevices = adapter.getBondedDevices();
 			}
-			OutputStream outputStream = null;
+			outputStream = null;
 			BluetoothDevice pairedDevice = null;
 			if (pairedDevices.size() > 0) {
 				pairedDevice = (BluetoothDevice) pairedDevices.toArray()[0];
 				ParcelUuid[] uuids = pairedDevice.getUuids();
                 BluetoothSocket socket = null;
-				try {
+                try {
 					final UUID mouseDroidUUID = UUID.fromString("3DD7E793-C461-4FAE-B715-12E8940A0975");
 					socket = pairedDevice.createRfcommSocketToServiceRecord(mouseDroidUUID);
 				} catch (IOException e) {
@@ -170,32 +179,49 @@ public class MainActivity extends ActionBarActivity implements SensorEventListen
 				}
                 try {
 					outputStream = socket.getOutputStream();
+					IsConnectionEstabilished = true;
 				} catch (IOException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
 			}
-			try {
-				System.out.println("LOHCHUBH PLS");
-				outputStream.write("WTF".getBytes());
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
 			
+			
+//			try {
+//				System.out.println("LOHCHUBH PLS");
+//				outputStream.write("WTF".getBytes());
+//			} catch (IOException e) {
+//				e.printStackTrace();
+//			}
 			return null;
 		}
 	};
 	
-	class SendBluetoothData extends AsyncTask<Void, Void, Void>{
+	class SendBluetoothData extends AsyncTask<float[], Void, Void>{
 	    @Override
 	    protected void onPreExecute() {
 	        super.onPreExecute();       
 	    }
-	   @SuppressLint("NewApi") @Override
-		protected Void doInBackground(Void... params) {
-		   		
-			return null;
+	   
+	@SuppressLint("NewApi") @Override
+	protected Void doInBackground(float[]... params) {
+		try {
+			if(IsConnectionEstabilished){
+			
+			byte[] array = new byte[20];
+			
+			
+			String s = Arrays.toString(params[0]);
+			array = s.getBytes();
+			System.out.println(s.getBytes().length + "LOHCHUBH PLS");
+			
+			outputStream.write(array);
+			}
+			} catch (IOException e) {
+			e.printStackTrace();
 		}
+		return null;
+	}
 	};
 	
 	
@@ -209,12 +235,7 @@ public class MainActivity extends ActionBarActivity implements SensorEventListen
         xValueText.setText(Float.toString(result[0]) );
         yValueText.setText(Float.toString(result[1]));
         zValueText.setText(Float.toString(result[2]));
-        if(!BLUETOOTH_ENABLED)
-		{	System.out.println("BLUETOOTH");
-			BLUETOOTH_ENABLED = true;
-			new Bluetooth().executeOnExecutor(Bluetooth.THREAD_POOL_EXECUTOR);
-		
-		}
+      
 	}
 	
 	@Override
