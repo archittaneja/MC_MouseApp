@@ -44,4 +44,23 @@
         android:layout_marginBottom="37dp"
         android:text="TextView" />
 
+    <Button
+        android:id="@+id/leftClick"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignBottom="@+id/zVal"
+        android:layout_alignTop="@+id/xVal"
+        android:layout_marginRight="14dp"
+        android:layout_toLeftOf="@+id/xVal"
+        android:text="Left Click" />
+
+    <Button
+        android:id="@+id/rightClick"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignBottom="@+id/zVal"
+        android:layout_alignTop="@+id/xVal"
+        android:layout_toRightOf="@+id/xVal"
+        android:text="Right Click" />
+
 </RelativeLayout>
